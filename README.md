@@ -9,6 +9,7 @@
 - **Customizable Views:** Generates 6 overlapping directional views (Front, Right, Back, Left, Up, Down).
 - **Adjustable FOV and Resolution:** Choose your desired field of view and output image resolution. A FOV > 90° ensures robust overlap for feature matching tools like COLMAP.
 - **Custom Naming:** Define custom prefixes for the generated image files.
+- **Lossless Output Format:** Choose between standard `.jpg` or lossless `.png` output for the generated images to prevent compression artifacts during photogrammetry matching.
 
 ## Requirements
 
@@ -40,17 +41,18 @@ python 360-slicer.py [options]
 | `--size` | | `1024` | Resolution (width and height) of the output square images |
 | `--fov` | `-f` | `100` | Field of View in degrees  |
 | `--prefix` | `-p` | `frame` | File prefix for the output image filenames |
+| `--format` | | `jpg` | Output image format (`jpg` or `png`) |
 
 ### Example
 
 Extract images from a video named `my_360_ride.mp4`, save them into a folder called `dataset`, process every 15th frame, set output resolution to 800x800, use a 110-degree FOV, and prefix files with `ride`:
 
 ```bash
-python 360-slicer.py -i my_360_ride.mp4 -o dataset -s 15 --size 800 -f 110 -p ride
+python 360-slicer.py -i my_360_ride.mp4 -o dataset -s 15 --size 800 -f 110 -p ride --format png
 ```
 
 This will produce images named like:
-`dataset/ride_0000_view_0.jpg`, `dataset/ride_0000_view_1.jpg`, etc.
+`dataset/ride_0000_view_0.png`, `dataset/ride_0000_view_1.png`, etc.
 
 ## How It Works
 

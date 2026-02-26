@@ -81,6 +81,7 @@ parser.add_argument("-s", "--skip", type=int, default=30, help="Process 1 frame 
 parser.add_argument("--size", type=int, default=1024, help="Resolution of output square images (1024x1024)")
 parser.add_argument("-f", "--fov", type=int, default=100, help="Field of View")
 parser.add_argument("-p", "--prefix", type=str, default="frame", help="Prefix for the output image filenames")
+parser.add_argument("--format", type=str, choices=['jpg', 'jpeg', 'png', 'bmp'], default="jpg", help="Output image format (e.g. jpg, png)")
 
 args = parser.parse_args()
 
@@ -90,6 +91,7 @@ FRAME_SKIP = args.skip
 OUTPUT_SIZE = args.size
 FOV = args.fov
 PREFIX = args.prefix
+OUTPUT_FORMAT = args.format.lower()
 
 # Define the 6 standard views (Yaw, Pitch)
 VIEWS = [
@@ -195,8 +197,8 @@ for frame in frames:
             # Remap uses interpolation to create the perspective view
             perspective_img = cv2.remap(frame, map_x, map_y, cv2.INTER_LINEAR)
             
-            # Save file: {PREFIX}_{frame_idx:04d}_view_{i}.jpg
-            filename = f"{PREFIX}_{frame_idx:04d}_view_{i}.jpg"
+            # Save file: {PREFIX}_{frame_idx:04d}_view_{i}.{format}
+            filename = f"{PREFIX}_{frame_idx:04d}_view_{i}.{OUTPUT_FORMAT}"
             cv2.imwrite(os.path.join(OUTPUT_DIR, filename), perspective_img)
             
         processed_count += 1
