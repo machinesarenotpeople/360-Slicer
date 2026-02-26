@@ -3,8 +3,9 @@ import numpy as np
 import os
 import sys
 import argparse
+import glob
 
-def get_perspective_map(img_w, img_h, fov, yaw, pitch):
+def get_perspective_map(img_w, img_h, fov, yaw, pitch, eq_w, eq_h):
     """
     Generates the X and Y mapping arrays for cv2.remap to convert 
     equirectangular to perspective.
@@ -73,17 +74,17 @@ def get_perspective_map(img_w, img_h, fov, yaw, pitch):
     return map_x.reshape(H, W), map_y.reshape(H, W)
 
 # --- Configuration ---
-parser = argparse.ArgumentParser(description="Extract perspective images from 360 equirectangular video.")
-parser.add_argument("-i", "--video", type=str, default="input_video.mp4", help="Input video file path")
+parser = argparse.ArgumentParser(description="Extract perspective images from 360 equirectangular video or images.")
+parser.add_argument("-i", "--input", "--video", dest="input", type=str, default="input.mp4", help="Input video file, image file, or directory of images")
 parser.add_argument("-o", "--output", type=str, default="colmap_images", help="Output directory for images")
 parser.add_argument("-s", "--skip", type=int, default=30, help="Process 1 frame every X frames (30 = 1 sec if 30fps)")
 parser.add_argument("--size", type=int, default=1024, help="Resolution of output square images (1024x1024)")
-parser.add_argument("-f", "--fov", type=int, default=100, help="Field of View (Over 90 ensures overlap for COLMAP)")
+parser.add_argument("-f", "--fov", type=int, default=100, help="Field of View")
 parser.add_argument("-p", "--prefix", type=str, default="frame", help="Prefix for the output image filenames")
 
 args = parser.parse_args()
 
-VIDEO_PATH = args.video
+INPUT_PATH = args.input
 OUTPUT_DIR = args.output
 FRAME_SKIP = args.skip
 OUTPUT_SIZE = args.size
@@ -100,21 +101,71 @@ VIEWS = [
     (0, -90)   # Down
 ]
 
-cap = cv2.VideoCapture(VIDEO_PATH)
-if not cap.isOpened():
-    print(f"Error: Could not open video {VIDEO_PATH}")
-    sys.exit()
-
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
-total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-eq_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-eq_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+# Determine input type
+if os.path.isdir(INPUT_PATH):
+    # Directory of images
+    image_files = []
+    for ext in ('*.jpg', '*.jpeg', '*.png', '*.bmp'):
+        image_files.extend(glob.glob(os.path.join(INPUT_PATH, ext)))
+        image_files.extend(glob.glob(os.path.join(INPUT_PATH, ext.upper())))
+    image_files.sort()
+    if not image_files:
+        print(f"Error: No images found in directory {INPUT_PATH}")
+        sys.exit()
+    
+    first_frame = cv2.imread(image_files[0])
+    if first_frame is None:
+        print(f"Error: Could not read image {image_files[0]}")
+        sys.exit()
+    eq_h, eq_w = first_frame.shape[:2]
+    total_frames = len(image_files)
+    
+    def frame_generator():
+        for f in image_files:
+            yield cv2.imread(f)
+            
+elif os.path.isfile(INPUT_PATH):
+    ext = os.path.splitext(INPUT_PATH)[1].lower()
+    if ext in ('.jpg', '.jpeg', '.png', '.bmp'):
+        # Single image
+        frame = cv2.imread(INPUT_PATH)
+        if frame is None:
+            print(f"Error: Could not read image {INPUT_PATH}")
+            sys.exit()
+        eq_h, eq_w = frame.shape[:2]
+        total_frames = 1
+        
+        def frame_generator():
+            yield frame
+    else:
+        # Video
+        cap = cv2.VideoCapture(INPUT_PATH)
+        if not cap.isOpened():
+            print(f"Error: Could not open video {INPUT_PATH}")
+            sys.exit()
+        
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        eq_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        eq_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
+        def frame_generator():
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                yield frame
+            cap.release()
+else:
+    print(f"Error: Input {INPUT_PATH} not found.")
+    sys.exit()
 
-print(f"Processing {VIDEO_PATH}...")
+print(f"Processing {INPUT_PATH}...")
 print(f"Resolution: {eq_w}x{eq_h}")
-print(f"Extracting frames every {FRAME_SKIP} frames.")
+if total_frames > 1:
+    print(f"Extracting frames every {FRAME_SKIP} frames.")
 
 frame_idx = 0
 processed_count = 0
@@ -125,16 +176,20 @@ processed_count = 0
 maps = []
 print("Pre-calculating projection maps...")
 for yaw, pitch in VIEWS:
-    mx, my = get_perspective_map(OUTPUT_SIZE, OUTPUT_SIZE, FOV, yaw, pitch)
+    mx, my = get_perspective_map(OUTPUT_SIZE, OUTPUT_SIZE, FOV, yaw, pitch, eq_w, eq_h)
     maps.append((mx, my, yaw, pitch))
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+frames = frame_generator()
+for frame in frames:
+    if frame is None:
+        continue
 
-    if frame_idx % FRAME_SKIP == 0:
-        print(f"Processing frame {frame_idx}/{total_frames}...")
+    # Note: total_frames == 1 is for single image
+    if total_frames == 1 or frame_idx % FRAME_SKIP == 0:
+        if total_frames > 1:
+            print(f"Processing frame {frame_idx}/{total_frames}...")
+        else:
+            print(f"Processing image...")
         
         for i, (map_x, map_y, yaw, pitch) in enumerate(maps):
             # Remap uses interpolation to create the perspective view
@@ -148,5 +203,4 @@ while True:
 
     frame_idx += 1
 
-cap.release()
 print(f"Done! Extracted {processed_count * 6} images to '{OUTPUT_DIR}'.")

@@ -1,6 +1,6 @@
 # 360 Slicer
 
-360 Slicer is a Python utility script designed to extract standard perspective images from equirectangular 360-degree videos. It processes a 360 video and generates 6 standard perspective views (Front, Right, Back, Left, Up, Down) for sampled frames, making it ideal for creating image datasets for photogrammetry, 3D Gaussian Splatting (3DGS), Colmap processing, or other computer vision tasks.
+360 Slicer is a Python utility script designed to extract standard perspective images from equirectangular 360-degree videos or images. It processes a 360 video, a single image, or a directory of images, and generates 6 standard perspective views (Front, Right, Back, Left, Up, Down) for sampled frames, making it ideal for creating image datasets for photogrammetry, 3D Gaussian Splatting (3DGS), Colmap processing, or other computer vision tasks.
 
 ## Features
 
@@ -34,12 +34,12 @@ python 360-slicer.py [options]
 
 | Argument | Short | Default | Description |
 | :--- | :---: | :--- | :--- |
-| `--video` | `-i` | `input_video.mp4` | Path to the input 360 equirectangular video file. |
-| `--output` | `-o` | `colmap_images` | Directory where the generated perspective images will be saved. |
-| `--skip` | `-s` | `30` | Process 1 frame every X frames (e.g., `30` = 1 frame per second for a 30fps video). |
-| `--size` | | `1024` | Resolution (width and height) of the output square images. |
-| `--fov` | `-f` | `100` | Field of View in degrees. Settings over 90 ensure overlap for photogrammetry! |
-| `--prefix` | `-p` | `frame` | File prefix for the output image filenames. |
+| `--input`, `--video` | `-i` | `input.mp4` | Path to the input 360 equirectangular video, image file, or directory of images |
+| `--output` | `-o` | `colmap_images` | Directory where the generated perspective images will be saved |
+| `--skip` | `-s` | `30` | Process 1 frame every X frames (e.g., `30` = 1 frame per second for a 30fps video) |
+| `--size` | | `1024` | Resolution (width and height) of the output square images |
+| `--fov` | `-f` | `100` | Field of View in degrees  |
+| `--prefix` | `-p` | `frame` | File prefix for the output image filenames |
 
 ### Example
 
@@ -59,4 +59,4 @@ This will produce images named like:
 3. Six standard rotation matrices (Yaw and Pitch) are applied to generate 6 independent viewing directions.
 4. The rotated 3D vectors are converted into Equirectangular spherical coordinates (longitude and latitude).
 5. These coordinates are mapped to pixel indices (UVs) of the equirectangular video frame.
-6. For each processed frame in the video, `cv2.remap` uses the computed maps to efficiently warp and extract the perspective projections.
+6. For each processed frame in the video or image space, `cv2.remap` uses the computed maps to efficiently warp and extract the perspective projections.
