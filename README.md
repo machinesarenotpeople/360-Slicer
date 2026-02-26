@@ -10,7 +10,7 @@
 - **Adjustable FOV and Resolution:** Choose your desired field of view and output image resolution. A FOV > 90° ensures robust overlap for feature matching tools like COLMAP.
 - **Custom Naming:** Define custom prefixes for the generated image files.
 - **Lossless Output Format:** Choose between standard `.jpg` or lossless `.png` output for the generated images to prevent compression artifacts during photogrammetry matching.
-- **Multiprocessing Support:** Significantly speeds up the extraction process by parallelizing image generation across multiple CPU cores.
+
 
 ## Requirements
 
