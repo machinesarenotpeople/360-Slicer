@@ -10,15 +10,17 @@
 - **Adjustable FOV and Resolution:** Choose your desired field of view and output image resolution. A FOV > 90° ensures robust overlap for feature matching tools like COLMAP.
 - **Custom Naming:** Define custom prefixes for the generated image files.
 - **Lossless Output Format:** Choose between standard `.jpg` or lossless `.png` output for the generated images to prevent compression artifacts during photogrammetry matching.
+- **Multiprocessing Support:** Significantly speeds up the extraction process by parallelizing image generation across multiple CPU cores.
+- **Progress Tracking:** Beautiful and robust progress bar estimation using `tqdm`.
 
 ## Requirements
 
-The script uses `numpy` for mathematical projection mapping and `opencv-python` (cv2) for image processing and file handling.
+The script uses `numpy` for mathematical projection mapping, `opencv-python` (cv2) for image processing, and `tqdm` for tracking progress.
 
 Install the required dependencies via pip:
 
 ```bash
-pip install numpy opencv-python
+pip install numpy opencv-python tqdm
 ```
 
 (Optional but recommended: Run this within a Python virtual environment).
@@ -42,6 +44,7 @@ python 360-slicer.py [options]
 | `--fov` | `-f` | `100` | Field of View in degrees  |
 | `--prefix` | `-p` | `frame` | File prefix for the output image filenames |
 | `--format` | | `jpg` | Output image format (`jpg` or `png`) |
+| `--workers` | `-w` | `CPU cores - 1` | Number of simultaneous processing workers |
 
 ### Example
 

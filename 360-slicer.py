@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
-import os
 import sys
+import os
 import argparse
 import glob
+from tqdm import tqdm
 
 def get_perspective_map(img_w, img_h, fov, yaw, pitch, eq_w, eq_h):
     """
@@ -182,15 +183,13 @@ for yaw, pitch in VIEWS:
     maps.append((mx, my, yaw, pitch))
 
 frames = frame_generator()
-for frame in frames:
+for frame in tqdm(frames, total=total_frames, desc="Extracting frames", unit="frame", disable=total_frames==1):
     if frame is None:
         continue
 
     # Note: total_frames == 1 is for single image
     if total_frames == 1 or frame_idx % FRAME_SKIP == 0:
-        if total_frames > 1:
-            print(f"Processing frame {frame_idx}/{total_frames}...")
-        else:
+        if total_frames == 1:
             print(f"Processing image...")
         
         for i, (map_x, map_y, yaw, pitch) in enumerate(maps):
